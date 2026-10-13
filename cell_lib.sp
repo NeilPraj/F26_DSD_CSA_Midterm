@@ -68,3 +68,13 @@ M8  y a  n1  vss tn L=6e-7 W=8.2e-7
 M9 n1 b  vss vss tn L=6e-7 W=8.2e-7
 
 .ends
+
+.subckt full_adder a b cin s cout 
+XXOR1 a b n0 xor2x1 
+
+XXOR2 cin n0 s xor2x1 
+
+XMUX1 a cin n0 cout mux2x1
+.ends
+
+
