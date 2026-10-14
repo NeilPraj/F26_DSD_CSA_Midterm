@@ -12,13 +12,18 @@ Cload1 cout vss 10f
 *Input voltage sources for a and b
 Va a 0 dc 3.3
 Vb b 0 dc 0
-Vcin cin 0 PULSE(0v 3.3v 0n 1n 1n 499n 1000n)
+Vcin cin 0 PULSE(0v 3.3v 50n 1n 1n 49n 100n)
 
 .control
-let mc_runs = 100
+let mc_runs = 5
 let current_run = 0
 set curplot = new
-set scratch = $curplot
+set tran_meas = $curplot
+let tplh_cout_delays = vector(mc_runs)
+let tphl_cout_delays = vector(mc_runs)
+
+let tphl_out_delays = vector(mc_runs)
+let tplh_out_delays = vector(mc_runs)
 
 define agauss(nom, avar, sig) (nom + avar/sig * sgauss(0))
 
@@ -164,9 +169,26 @@ dowhile current_run < mc_runs
   alter @m.xdut.xmux1.m8[l] = agauss(mm8l, 3n, 1)
   alter @m.xdut.xmux1.m9[l] = agauss(mm9l, 3n, 1)
 
+
+  tran 10p 150n 40n
+  meas tran tplh_cout TRIG v(cin) val=1.65 rise=1 targ v(cout) val=1.65 rise=1
+  meas tran tphl_cout TRIG v(cin) val=1.65 fall=1 targ v(cout) val=1.65 fall=1
+  meas tran tphl_out  TRIG v(cin) val=1.65 rise=1 targ v(out)  val=1.65 fall=1
+  meas tran tplh_out  TRIG v(cin) val=1.65 fall=1 targ v(out)  val=1.65 rise=1
+
+  set simplot = $curplot          
+  setplot $tran_meas             
+
+  let tplh_cout_delays[current_run] = {$simplot}.tplh_cout
+  let tphl_cout_delays[current_run] = {$simplot}.tphl_cout
+  let tphl_out_delays[current_run]  = {$simplot}.tphl_out
+  let tplh_out_delays[current_run]  = {$simplot}.tplh_out
+
+  destroy $simplot              
+  let current_run = current_run + 1
 end
 
+print tplh_cout_delays tphl_cout_delays tplh_out_delays tphl_out_delays
+wrdata mc_delays.txt tplh_cout_delays tphl_cout_delays tplh_out_delays tphl_out_delays
 
-
-.endc 
-
+.endc
