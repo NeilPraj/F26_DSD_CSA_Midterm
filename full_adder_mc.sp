@@ -15,7 +15,7 @@ Vb b 0 dc 0
 Vcin cin 0 PULSE(0v 3.3v 50n 1n 1n 49n 100n)
 
 .control
-let mc_runs = 5
+let mc_runs = 100
 let current_run = 0
 set curplot = new
 set tran_meas = $curplot
@@ -189,6 +189,9 @@ dowhile current_run < mc_runs
 end
 
 print tplh_cout_delays tphl_cout_delays tplh_out_delays tphl_out_delays
+
+set wr_singlescale    * write the scale column once, not before every vector
+set wr_vecnames       * add a header row with the vector names
 wrdata mc_delays.txt tplh_cout_delays tphl_cout_delays tplh_out_delays tphl_out_delays
 
 .endc
