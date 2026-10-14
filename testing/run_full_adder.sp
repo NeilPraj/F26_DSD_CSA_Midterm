@@ -1,6 +1,5 @@
 * Full adder exhaustive test - all 8 input combinations
-.include ./cell_lib.sp
-
+.include ../cell_lib.sp
 .global vdd vss
 Vdd vdd vss dc 3.3v
 Vss vss 0 0
