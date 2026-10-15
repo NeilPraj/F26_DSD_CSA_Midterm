@@ -1,33 +1,93 @@
-.include ./cell_lib.sp
+.include ../cell_lib.sp 
 
 .global vdd
 .global vss
 Vdd vdd 0 dc 3.3v
 Vss vss 0 dc 0
 
-xdut a b cin out cout full_adder
-Cload out vss 10f
-Cload1 cout vss 10f 
+*Select Switch
+Xselect a_select b_select s_select out_select mux2x1
+Cload s_select vss 10f
+Cload1 out_select vss 10f
 
-*Input voltage sources for a and b
-Va a 0 dc 3.3
-Vb b 0 dc 0
-Vcin cin 0 PULSE(0v 3.3v 50n 1n 1n 49n 100n)
+*Input Switch
+Xinput a_input b_input s_input out_input mux2x1
+Cload2 s_input vss 10f
+Cload3 out_select vss 10f
+
+*Input voltage sources for switching select
+Va_select a_select 0 PULSE(0v 3.3v 50n 1n 1n 49n 100n)
+Vb_select b_select 0 dc 0
+Vs_select s_select 0 dc 0
+
+*Input voltage sources for switching input
+Va_input a_input 0 dc 3.3
+Vb_input b_input 0 dc 0
+Vs_input s_input 0 PULSE(0v 3.3v 50n 1n 1n 49n 100n)
 
 .control
 let mc_runs = 100
 let current_run = 0
 set curplot = new
 set tran_meas = $curplot
-let tplh_cout_delays = vector(mc_runs)
-let tphl_cout_delays = vector(mc_runs)
+let select_switch_hl = vector(mc_runs)
+let select_switch_lh = vector(mc_runs)
 
-let tphl_out_delays = vector(mc_runs)
-let tplh_out_delays = vector(mc_runs)
+let input_switch_hl = vector(mc_runs)
+let input_switch_lh = vector(mc_runs)
 
 define agauss(nom, avar, sig) (nom + avar/sig * sgauss(0))
 
 let xm0w = @m.xdut.xxor1.m0[w]
+let xm0l = @m.xdut.xxor1.m0[l]
+
+let xm1w = @m.xdut.xxor1.m1[w]
+let xm1l = @m.xdut.xxor1.m1[l]
+
+let xm2w = @m.xdut.xxor1.m2[w]
+let xm2l = @m.xdut.xxor1.m2[l]
+
+let xm3w = @m.xdut.xxor1.m3[w]
+let xm3l = @m.xdut.xxor1.m3[l]
+
+let xm4w = @m.xdut.xxor1.m4[w]
+let xm4l = @m.xdut.xxor1.m4[l]
+
+let xm5w = @m.xdut.xxor1.m5[w]
+let xm5l = @m.xdut.xxor1.m5[l]
+
+let xm6w = @m.xdut.xxor1.m6[w]
+let xm6l = @m.xdut.xxor1.m6[l]
+
+let xm7w = @m.xdut.xxor1.m7[w]
+let xm7l = @m.xdut.xxor1.m7[l]
+
+let xm8w = @m.xdut.xxor1.m8[w]
+let xm8l = @m.xdut.xxor1.m8[l]
+
+let xm9w = @m.xdut.xxor1.m9[w]
+let xm9l = @m.xdut.xxor1.m9[l]
+
+
+
+*MUX initial values
+let mmo0w = @m.xdut.xmux1.mo0[w]
+let mmo0l = @m.xdut.xmux1.mo0[l]
+
+let mmo1w = @m.xdut.xmux1.mo1[w]
+let mmo1l = @m.xdut.xmux1.mo1[l]
+
+let mm0w = @m.xdut.xmux1.m0[w]
+let mm0l = @m.xdut.xmux1.m0[l]
+
+let mm1w = @m.xdut.xmux1.m1[w]
+let mm1l = @m.xdut.xmux1.m1[l]
+
+let mm2w = @m.xdut.xmux1.m2[w]
+let mm2l = @m.xdut.xmux1.m2[l]
+
+let mm3w = @m.xdut.xmux1.m3[w]
+let mm3l = @m.xdut.xmux1.m3[l]
 let xm0l = @m.xdut.xxor1.m0[l]
 
 let xm1w = @m.xdut.xxor1.m1[w]
@@ -169,29 +229,28 @@ dowhile current_run < mc_runs
   alter @m.xdut.xmux1.m8[l] = agauss(mm8l, 3n, 1)
   alter @m.xdut.xmux1.m9[l] = agauss(mm9l, 3n, 1)
 
-
   tran 10p 150n 40n
-  meas tran tplh_cout TRIG v(cin) val=1.65 rise=1 targ v(cout) val=1.65 rise=1
-  meas tran tphl_cout TRIG v(cin) val=1.65 fall=1 targ v(cout) val=1.65 fall=1
-  meas tran tphl_out  TRIG v(cin) val=1.65 rise=1 targ v(out)  val=1.65 fall=1
-  meas tran tplh_out  TRIG v(cin) val=1.65 fall=1 targ v(out)  val=1.65 rise=1
+  meas tran select_delay_lh TRIG v(a_select) val=1.65 rise=1 targ v(out_select) val=1.65 rise=1
+  meas tran select_delay_hl TRIG v(a_select) val=1.65 fall=1 targ v(out_select) val=1.65 fall=1
+  meas tran input_delay_lh TRIG v(s_input) val=1.65 rise=1 targ v(out_input) val=1.65 rise=1
+  meas tran input_delay_hl TRIG v(s_input) val=1.65 fall=1 targ v(out_input) val=1.65 fall=1
 
-  set simplot = $curplot          
-  setplot $tran_meas             
+  set simplot = $curplot
+  setplot $tran_meas
 
-  let tplh_cout_delays[current_run] = {$simplot}.tplh_cout
-  let tphl_cout_delays[current_run] = {$simplot}.tphl_cout
-  let tphl_out_delays[current_run]  = {$simplot}.tphl_out
-  let tplh_out_delays[current_run]  = {$simplot}.tplh_out
+  let select_switch_lh[current_run] = {$simplot}.select_delay_lh
+  let select_switch_hl[current_run] = {$simplot}.select_delay_hl
+  let input_switch_lh[current_run] = {$simplot}.input_delay_lh
+  let input_switch_hl[current_run] = {$simplot}.input_delay_hl
 
-  destroy $simplot              
+  destroy $simplot
   let current_run = current_run + 1
 end
 
-print tplh_cout_delays tphl_cout_delays tplh_out_delays tphl_out_delays
+print select_switch_lh select_switch_hl input_switch_lh input_switch_hl
 
-set wr_singlescale    * write the scale column once, not before every vector
-set wr_vecnames       * add a header row with the vector names
-wrdata mc_delays.txt tplh_cout_delays tphl_cout_delays tplh_out_delays tphl_out_delays
+set wr_singlescale
+set wr_vecnames
+wrdata mux_mc_delays.txt select_switch_lh select_switch_hl input_switch_lh input_switch_hl
 
 .endc

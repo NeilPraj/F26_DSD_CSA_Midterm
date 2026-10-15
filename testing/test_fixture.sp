@@ -1,5 +1,5 @@
 *Full Adder Propagation Delay Fixture
-.include ./cell_lib.sp
+.include ../cell_lib.sp 
 
 .global vdd
 .global vss
