@@ -1,1 +1,4 @@
-.txt
+.venv/
+*.txt
+!requirements.txt
+pyrightconfig.json
