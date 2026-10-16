@@ -19,7 +19,7 @@ Vb b 0 dc 0
 Vcin cin 0 PULSE(0v 3.3v 50n 1n 1n 49n 100n)
 
 .control
-let mc_runs = 1000
+let mc_runs = 3000
 let current_run = 0
 set curplot = new
 set tran_meas = $curplot

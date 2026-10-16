@@ -1,4 +1,18 @@
 .venv/
-*.txt
-!requirements.txt
 pyrightconfig.json
+
+# Simulation results: stay on each machine, copy them with scp
+/full_adder_mc/timing_results.txt
+/full_adder_mc/full_adder_mc.txt
+/full_adder_mc/runs/
+/mux_mc/mux_mc_delays.txt
+/full_adder_mc_runs/
+*.txt
+
+# Leftovers if launch_parallel.sh is interrupted mid-run
+*_w[0-9]*.sp
+*_w[0-9]*.txt
+worker_*.log
+
+# Created by the launch scripts
+.spiceinit
