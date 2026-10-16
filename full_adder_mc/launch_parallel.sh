@@ -15,7 +15,10 @@ cd "$(dirname "$0")"
 
 TOTAL=${1:?usage: $0 <total_trials> [workers]}
 WORKERS=${2:-8}
-BASE_SEED=${BASE_SEED:-$(date +%s)}   # override with: BASE_SEED=1234 ./launch_parallel.sh ...
+# Random base seed per run (fits in a signed 32-bit int). Odds of two runs overlapping are ~1 in 100 million,
+# so every machine can use this same script unmodified. Recorded in run_info.txt for reproducibility.
+# Override to reproduce a run: BASE_SEED=1234 ./launch_parallel.sh ...
+BASE_SEED=${BASE_SEED:-$(( $(od -An -N4 -tu4 /dev/urandom) % 2000000000 ))}
 SRC=full_adder_mc.sp
 RUN_ID=$(date +%Y%m%d_%H%M%S)
 RUN_DIR=runs/$RUN_ID
