@@ -141,5 +141,5 @@ print select_switch_lh select_switch_hl input_switch_lh input_switch_hl
 set wr_singlescale
 set wr_vecnames
 wrdata mux_mc_delays.txt select_switch_lh select_switch_hl input_switch_lh input_switch_hl
-
+quit
 .endc
