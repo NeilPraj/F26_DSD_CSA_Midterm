@@ -14,14 +14,14 @@ Xinput a_input b_input s_input out_input mux2x1
 Cload3 out_input vss 10f
 
 *Input voltage sources for switching select
-Va_select a_select 0 PULSE(0v 3.3v 50n 1n 1n 49n 100n)
+Va_select a_select 0 dc 3.3
 Vb_select b_select 0 dc 0
-Vs_select s_select 0 dc 0
+Vs_select s_select 0 PULSE(0v 3.3v 50n 1n 1n 49n 100n)
 
 *Input voltage sources for switching input
-Va_input a_input 0 dc 3.3
+Va_input a_input 0 PULSE(0v 3.3v 50n 1n 1n 49n 100n)
 Vb_input b_input 0 dc 0
-Vs_input s_input 0 PULSE(0v 3.3v 50n 1n 1n 49n 100n)
+Vs_input s_input 0 dc 0
 
 .control
 let mc_runs = 1000
@@ -119,10 +119,10 @@ dowhile current_run < mc_runs
   
 
   tran 10p 150n 40n
-  meas tran select_delay_lh TRIG v(a_select) val=1.65 rise=1 targ v(out_select) val=1.65 rise=1
-  meas tran select_delay_hl TRIG v(a_select) val=1.65 fall=1 targ v(out_select) val=1.65 fall=1
-  meas tran input_delay_lh TRIG v(s_input) val=1.65 fall=1 targ v(out_input) val=1.65 rise=1
-  meas tran input_delay_hl TRIG v(s_input) val=1.65 rise=1 targ v(out_input) val=1.65 fall=1
+  meas tran select_delay_lh TRIG v(s_select) val=1.65 fall=1 targ v(out_select) val=1.65 rise=1
+  meas tran select_delay_hl TRIG v(s_select) val=1.65 rise=1 targ v(out_select) val=1.65 fall=1
+  meas tran input_delay_lh  TRIG v(a_input)  val=1.65 rise=1 targ v(out_input)  val=1.65 rise=1
+  meas tran input_delay_hl  TRIG v(a_input)  val=1.65 fall=1 targ v(out_input)  val=1.65 fall=1
 
   set simplot = $curplot
   setplot $tran_meas

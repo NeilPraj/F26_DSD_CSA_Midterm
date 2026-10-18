@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-data = np.loadtxt("../full_adder_mc/full_adder_mc.txt", skiprows=1)
+data = np.loadtxt("../full_adder_runs/total_full_adder_mc_merged.txt", skiprows=1)
 
 #Toss scale column since its a duplicate of the first data column
 
@@ -17,6 +17,19 @@ mean_cout_hl = np.mean(cout_hl)
 mean_out_lh = np.mean(out_lh)
 mean_out_hl = np.mean(out_hl)
 
+median_cout_lh = np.median(cout_lh)
+median_cout_hl = np.median(cout_hl)
+median_out_lh = np.median(out_lh)
+median_out_hl = np.median(out_hl)
+
+print(
+    f"--- Propagation Delay Medians ---\n"
+    f"  COUT (LH / HL): {median_cout_lh:.4f} / {median_cout_hl:.4f}\n"
+    f"  OUT  (LH / HL): {median_out_lh:.4f} / {median_out_hl:.4f}\n"
+    f"---------------------------------"
+)
+
+
 avg_cout = (mean_cout_hl + mean_cout_lh) / 2;
 avg_out = (mean_out_hl + mean_out_lh) / 2; 
 
@@ -28,21 +41,25 @@ axs[0,0].hist(cout_hl, bins='auto', linewidth=0.5, edgecolor='white')
 axs[0,0].set_title("Cout High -> Low Histogram")
 axs[0,0].set_xlabel("Delay (ps)")
 axs[0,0].axvline(mean_cout_hl, color="red", linestyle="dashed", linewidth="2", label=f"Mean: {mean_cout_hl:.2f}")
+axs[0,0].axvline(median_cout_hl, color="black", linestyle="dashed", linewidth="2", label=f"Mean: {median_cout_hl:.2f}")
 
 axs[0,1].hist(cout_lh, bins='auto', linewidth=0.5, edgecolor='white')
 axs[0,1].set_title("Cout Low -> High Histogram")
 axs[0,1].set_xlabel("Delay (ps)")
 axs[0,1].axvline(mean_cout_lh, color="red", linestyle="dashed", linewidth="2", label=f"Mean: {mean_cout_lh:.2f}")
+axs[0,1].axvline(median_cout_lh, color="black", linestyle="dashed", linewidth="2", label=f"Mean: {median_cout_lh:.2f}")
 
 axs[1,0].hist(out_hl, bins='auto', linewidth=0.5, edgecolor='white')
 axs[1,0].set_title("Out High -> Low Histogram")
 axs[1,0].set_xlabel("Delay (ps)")
 axs[1,0].axvline(mean_out_hl, color="red", linestyle="dashed", linewidth="2", label=f"Mean: {mean_out_hl:.2f}")
+axs[1,0].axvline(median_out_hl, color="black", linestyle="dashed", linewidth="2", label=f"Mean: {median_out_hl:.2f}")
 
 axs[1,1].hist(out_lh, bins='auto', linewidth=0.5, edgecolor='white')
 axs[1,1].set_title("Out Low -> High Histogram")
 axs[1,1].set_xlabel("Delay (ps)")
 axs[1,1].axvline(mean_out_lh, color="red", linestyle="dashed", linewidth="2", label=f"Mean: {mean_out_lh:.2f}")
+axs[1,1].axvline(median_out_lh, color="black", linestyle="dashed", linewidth="2", label=f"Mean: {median_out_lh:.2f}")
 
 plt.tight_layout()
 plt.show()

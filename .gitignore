@@ -8,6 +8,9 @@ pyrightconfig.json
 /mux_mc/mux_mc_delays.txt
 /full_adder_mc_runs/
 *.txt
+/mux_mc_runs/
+/mux_mc/runs/
+/full_adder_runs/
 
 # Leftovers if launch_parallel.sh is interrupted mid-run
 *_w[0-9]*.sp
