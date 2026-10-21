@@ -1,67 +1,106 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import norm
+import os
+
+K = 3
+SUM_DIR = "fa_plots"
+os.makedirs(SUM_DIR, exist_ok=True)
 
 data = np.loadtxt("../full_adder_runs/total_full_adder_mc_merged.txt", skiprows=1)
+data = data[:, 1:] * 1e12                      # drop scale column, convert to ps
 
-#Toss scale column since its a duplicate of the first data column
+# Drop runs where any measurement failed
+good = ~np.isnan(data).any(axis=1)
+print(f"Runs: {len(data)}, dropped (failed meas): {(~good).sum()}")
+data = data[good]
 
-data = data * 1e12
+signals = {
+    "COUT LH": data[:, 0], "COUT HL": data[:, 1],
+    "SUM LH":  data[:, 2], "SUM HL":  data[:, 3],
+}
+signals["COUT tpd"] = (signals["COUT LH"] + signals["COUT HL"]) / 2
+signals["SUM tpd"]  = (signals["SUM LH"]  + signals["SUM HL"])  / 2
 
-cout_lh = data[:,1]
-cout_hl = data[:,2]
-out_lh = data[:,3]
-out_hl = data[:,4]
-
-mean_cout_lh = np.mean(cout_lh)
-mean_cout_hl = np.mean(cout_hl)
-mean_out_lh = np.mean(out_lh)
-mean_out_hl = np.mean(out_hl)
-
-median_cout_lh = np.median(cout_lh)
-median_cout_hl = np.median(cout_hl)
-median_out_lh = np.median(out_lh)
-median_out_hl = np.median(out_hl)
-
-print(
-    f"--- Propagation Delay Medians ---\n"
-    f"  COUT (LH / HL): {median_cout_lh:.4f} / {median_cout_hl:.4f}\n"
-    f"  OUT  (LH / HL): {median_out_lh:.4f} / {median_out_hl:.4f}\n"
-    f"---------------------------------"
-)
+# ---------------------------------------------------------------- stats table
+print(f"{'Signal':<10}{'mean':>9}{'median':>9}{'sigma':>8}{'min':>9}{'max':>9}"
+      f"{f'mu-{K}s':>9}{f'mu+{K}s':>9}")
+for name, x in signals.items():
+    mu, s = x.mean(), x.std(ddof=1)
+    print(f"{name:<10}{mu:9.2f}{np.median(x):9.2f}{s:8.2f}"
+          f"{x.min():9.2f}{x.max():9.2f}{mu - K*s:9.2f}{mu + K*s:9.2f}")
 
 
-avg_cout = (mean_cout_hl + mean_cout_lh) / 2;
-avg_out = (mean_out_hl + mean_out_lh) / 2; 
+# ---------------------------------------------------------------- plotting
+def centered_limits(*arrays):
+    """Symmetric x-limits around the mean of each array, wide enough to hold
+    all data and the +/-K sigma markers. With several arrays, returns one range
+    that covers all of them (so side-by-side plots share an x-axis)."""
+    lo, hi = np.inf, -np.inf
+    for x in arrays:
+        mu, s = x.mean(), x.std(ddof=1)
+        half = max(K*s, mu - x.min(), x.max() - mu) * 1.05
+        lo, hi = min(lo, mu - half), max(hi, mu + half)
+    return lo, hi
 
-print(f"Average cout: {avg_cout}, Average out: {avg_out}")
 
-fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(10,4))
+def plot_hist(ax, name, x, xlim=None):
+    mu, s = x.mean(), x.std(ddof=1)
+    # "auto" picks hundreds of hairline bins for huge N; cap it so bars stay readable
+    bins = "auto" if len(x) < 10_000 else 80
+    ax.hist(x, bins=bins, density=True, edgecolor="white", linewidth=0.5)
+    xs = np.linspace(x.min(), x.max(), 200)
+    ax.plot(xs, norm.pdf(xs, mu, s), "k-", lw=1, label="Gaussian fit")
+    ax.axvline(mu, color="red", ls="--", lw=1.5, label=f"μ = {mu:.2f} ps")
+    ax.axvline(mu - K*s, color="orange", ls=":", lw=1.5, label=f"μ−{K}σ = {mu-K*s:.2f} ps")
+    ax.axvline(mu + K*s, color="orange", ls=":", lw=1.5, label=f"μ+{K}σ = {mu+K*s:.2f} ps")
+    ax.set_xlim(xlim if xlim is not None else centered_limits(x))
+    ax.set_title(f"{name} (σ = {s:.2f} ps)")
+    ax.set_xlabel("Delay (ps)")
+    ax.legend(fontsize=8)
 
-axs[0,0].hist(cout_hl, bins='auto', linewidth=0.5, edgecolor='white')
-axs[0,0].set_title("Cout High -> Low Histogram")
-axs[0,0].set_xlabel("Delay (ps)")
-axs[0,0].axvline(mean_cout_hl, color="red", linestyle="dashed", linewidth="2", label=f"Mean: {mean_cout_hl:.2f}")
-axs[0,0].axvline(median_cout_hl, color="black", linestyle="dashed", linewidth="2", label=f"Mean: {median_cout_hl:.2f}")
 
-axs[0,1].hist(cout_lh, bins='auto', linewidth=0.5, edgecolor='white')
-axs[0,1].set_title("Cout Low -> High Histogram")
-axs[0,1].set_xlabel("Delay (ps)")
-axs[0,1].axvline(mean_cout_lh, color="red", linestyle="dashed", linewidth="2", label=f"Mean: {mean_cout_lh:.2f}")
-axs[0,1].axvline(median_cout_lh, color="black", linestyle="dashed", linewidth="2", label=f"Mean: {median_cout_lh:.2f}")
+def save(fig, fname):
+    fig.savefig(f"{SUM_DIR}/{fname}.png", dpi=300, bbox_inches="tight")
+    fig.savefig(f"{SUM_DIR}/{fname}.svg", bbox_inches="tight")
 
-axs[1,0].hist(out_hl, bins='auto', linewidth=0.5, edgecolor='white')
-axs[1,0].set_title("Out High -> Low Histogram")
-axs[1,0].set_xlabel("Delay (ps)")
-axs[1,0].axvline(mean_out_hl, color="red", linestyle="dashed", linewidth="2", label=f"Mean: {mean_out_hl:.2f}")
-axs[1,0].axvline(median_out_hl, color="black", linestyle="dashed", linewidth="2", label=f"Mean: {median_out_hl:.2f}")
 
-axs[1,1].hist(out_lh, bins='auto', linewidth=0.5, edgecolor='white')
-axs[1,1].set_title("Out Low -> High Histogram")
-axs[1,1].set_xlabel("Delay (ps)")
-axs[1,1].axvline(mean_out_lh, color="red", linestyle="dashed", linewidth="2", label=f"Mean: {mean_out_lh:.2f}")
-axs[1,1].axvline(median_out_lh, color="black", linestyle="dashed", linewidth="2", label=f"Mean: {median_out_lh:.2f}")
+def to_fname(name):
+    return name.replace(" ", "_").lower()           # "COUT LH" -> "cout_lh"
 
-plt.tight_layout()
+
+names = ["COUT LH", "COUT HL", "SUM LH", "SUM HL"]
+names_tpd = ["COUT tpd", "SUM tpd"]
+
+# Individual figures, one file each
+for name in names + names_tpd:
+    fig, ax = plt.subplots(figsize=(6, 4))
+    plot_hist(ax, name, signals[name])
+    fig.tight_layout()
+    save(fig, to_fname(name))
+    plt.close(fig)                                  # don't pop up extra windows
+
+# Side-by-side LH | HL pairs, one figure per output.
+# Each panel gets its own scale, centered on its own mean.
+pairs = {
+    "COUT": ("COUT LH", "COUT HL"),
+    "SUM":  ("SUM LH",  "SUM HL"),
+}
+for out_name, (lh, hl) in pairs.items():
+    fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+    plot_hist(axs[0], lh, signals[lh])
+    plot_hist(axs[1], hl, signals[hl])
+    axs[0].set_ylabel("Probability density")
+    fig.suptitle(f"{out_name} Propagation Delay: LH vs HL (N = {len(data)})")
+    fig.tight_layout()
+    save(fig, f"{out_name.lower()}_lh_hl_pair")
+    plt.close(fig)
+
+# Combined 2x2 grid
+fig, axs = plt.subplots(2, 2, figsize=(10, 7))
+for ax, name in zip(axs.flat, names):
+    plot_hist(ax, name, signals[name])
+fig.suptitle(f"Full Adder Monte Carlo Propagation Delay (N = {len(data)})")
+fig.tight_layout()
+save(fig, "combined")
 plt.show()
-
-

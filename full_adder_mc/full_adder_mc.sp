@@ -19,7 +19,7 @@ Vb b 0 dc 0
 Vcin cin 0 PULSE(0v 3.3v 50n 1n 1n 49n 100n)
 
 .control
-let mc_runs = 3000
+let mc_runs = 1000
 let current_run = 0
 set curplot = new
 set tran_meas = $curplot
@@ -30,6 +30,7 @@ let tphl_out_delays = vector(mc_runs)
 let tplh_out_delays = vector(mc_runs)
 
 define agauss(nom, avar, sig) (nom + avar/sig * sgauss(0))
+define rgauss(nom, rvar, sig) (nom + nom*rvar/sig * sgauss(0))  * relative variation
 
 let xm0w = @m.xdut.xxor1.m0[w]
 let xm0l = @m.xdut.xxor1.m0[l]

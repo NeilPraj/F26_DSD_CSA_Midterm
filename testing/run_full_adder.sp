@@ -15,6 +15,11 @@ Vcin cin 0 PULSE(0v 3.3v 400n 1n 1n 399n 800n)
 .control
 tran 0.1ns 1600ns          ; two full passes through all 8 combos
 plot cin+20 b+16 a+12 cout+4 out title 'Full Adder: inputs (top) / outputs (bottom)'
+set hcopypscolor=1
+set color0=white
+set color1=black
+hardcopy fa_sim.ps cin+20 b+16 a+12 cout+4 out title 'Full Adder: inputs (top) / outputs (bottom)'
+hardcopy fa_sim.ps cin+20 b+16 a+12 cout+4 out title 'Full Adder: inputs (top) / outputs (bottom)'
 plot a b cin title 'Inputs'
 plot out cout title 'Outputs'
 .endc

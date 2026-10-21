@@ -41,6 +41,9 @@ meas tran tpd_cout_r_10f trig v(b0) val=1.65 rise=1 targ v(cout) val=1.65 rise=1
 meas tran tpd_sf_r_10f   trig v(b0) val=1.65 rise=1 targ v(sf)   val=1.65 fall=1
 meas tran tpd_cout_f_10f trig v(b0) val=1.65 fall=1 targ v(cout) val=1.65 fall=1
 meas tran tpd_sf_f_10f   trig v(b0) val=1.65 fall=1 targ v(sf)   val=1.65 rise=1
+plot v(b0) v(xdut.c2)+4 v(xdut.c5)+8 v(xdut.c9)+12 v(xdut.ce)+16 v(cout)+20 v(sf)+24 xlimit 0.9n 5.5n
+set hcopydevtype=svg
+hardcopy csa_rise.svg v(b0) v(xdut.c2)+4 v(xdut.c5)+8 v(xdut.c9)+12 v(xdut.ce)+16 v(cout)+20 v(sf)+24 xlimit 0.9n 5.5n
 
 alter cs0  40f
 alter cs1  40f
