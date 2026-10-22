@@ -34,8 +34,8 @@ INSTANCES = {
 }
 
 PARAMS = ["w", "l"]     # transistor parameters to vary
-ABS_VARIATION = "9n"    # agauss absolute variation
-SIGMA = 4               # variation is a SIGMA-sigma bound
+ABS_VARIATION = "18n"    # agauss absolute variation
+SIGMA = 3               # variation is a SIGMA-sigma bound
 
 # Transient settings: step, stop, start-saving
 TRAN = ("10p", "150n", "40n")

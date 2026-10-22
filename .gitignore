@@ -15,6 +15,8 @@ pyrightconfig.json
 /CSA_testing/runs
 /scripts/fa_plots
 /scripts/mux_plots/
+/full_adder_mc/runs_old/
+/full_adder_runs_old
 
 # Leftovers if launch_parallel.sh is interrupted mid-run
 *_w[0-9]*.sp

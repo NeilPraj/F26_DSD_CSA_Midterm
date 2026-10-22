@@ -49,7 +49,7 @@ for path, cell in gates:
     for fet in FETS[cell]:
         for p in "wl":
             alters.append(
-                f"  alter @m.{path}.{fet}[{p}] = agauss({cell}_{fet}{p}, 30n, 3)"
+                f"  alter @m.{path}.{fet}[{p}] = agauss({cell}_{fet}{p}, 18n, 3)"
             )
 
 TEMPLATE = """* carry_select_16 Monte Carlo testbench
