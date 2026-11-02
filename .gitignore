@@ -16,6 +16,7 @@ pyrightconfig.json
 /CSA_testing/runs
 /scripts/fa_plots
 /scripts/mux_plots/
+/scripts/csa_plots/
 /full_adder_mc/runs_old/
 /full_adder_runs_old
 /mux_mc_runs_old
