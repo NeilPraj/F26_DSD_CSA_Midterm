@@ -1,14 +1,14 @@
 #!/bin/bash
-# Pull every deployed VM's runs into <repo>/mux_mc_runs/gc_<region>_<cores>/
+# Pull every deployed VM's runs into <repo>/CSA_runs/gc_<region>_<cores>/
 # Starts stopped VMs to copy from them, stops them again, and reports which
 # VMs have finished, are still running, or stopped before finishing.
-#   ./collect.sh              write to <repo>/mux_mc_runs
+#   ./collect.sh              write to <repo>/CSA_runs
 #   ./collect.sh some/folder  write somewhere else
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 VM_LIST="$SCRIPT_DIR/deployed_vms.txt"
-OUT=${1:-$REPO_ROOT/mux_mc_runs}
+OUT=${1:-$REPO_ROOT/CSA_runs}
 
 # A passphrase-protected key needs ssh-agent, or the parallel SSH prompts collide
 KEY=~/.ssh/google_compute_engine
@@ -55,7 +55,7 @@ for job in "${jobs_list[@]}"; do
     for try in {1..10}; do
       rm -rf "$OUT/$dir" && mkdir -p "$OUT/$dir"
       # Stream runs/ as a tar archive, skipping the per-chunk scratch folders (work/)
-      if "${SSH[@]}" --command="tar -C ~/F26_DSD_CSA_Midterm/mux_mc/runs --exclude=work -czf - ." < /dev/null \
+      if "${SSH[@]}" --command="tar -C ~/F26_DSD_CSA_Midterm/CSA_testing/runs --exclude=work -czf - ." < /dev/null \
          | tar -C "$OUT/$dir" -xzf -; then
         ok=1
         break
@@ -70,7 +70,7 @@ for job in "${jobs_list[@]}"; do
       run=$(ls -d "$OUT/$dir"/*/ 2>/dev/null | sort | tail -n 1)
       if [[ -z $run ]]; then
         status="no run found on this VM"
-      elif [[ -f $run/mux_mc_delays_merged.txt ]]; then
+      elif [[ -f $run/carry_select_mc_merged.txt ]]; then
         status="finished"
       else
         total=$(sed -n 's/^TOTAL=//p' "$run/params")
@@ -104,11 +104,11 @@ for f in "$status_dir"/*; do
 done
 echo
 
-merged=("$OUT"/*/*/mux_mc_delays_merged.txt)
+merged=("$OUT"/*/*/carry_select_mc_merged.txt)
 if [[ -f ${merged[0]} ]]; then
-  awk 'FNR > 1 || NR == 1' "${merged[@]}" > "$OUT/total_mux_mc_delays_merged.txt"
-  echo "Combined ${#merged[@]} runs into $OUT/total_mux_mc_delays_merged.txt" \
-       "($(( $(wc -l < "$OUT/total_mux_mc_delays_merged.txt") - 1 )) trials)"
+  awk 'FNR > 1 || NR == 1' "${merged[@]}" > "$OUT/total_carry_select_mc_merged.txt"
+  echo "Combined ${#merged[@]} runs into $OUT/total_carry_select_mc_merged.txt" \
+       "($(( $(wc -l < "$OUT/total_carry_select_mc_merged.txt") - 1 )) trials)"
 else
   echo "No finished runs to combine yet"
 fi

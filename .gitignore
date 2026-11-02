@@ -9,6 +9,7 @@ pyrightconfig.json
 /full_adder_mc_runs/
 *.txt
 /mux_mc_runs/
+/CSA_runs/
 /mux_mc/runs/
 /full_adder_runs/
 /report/

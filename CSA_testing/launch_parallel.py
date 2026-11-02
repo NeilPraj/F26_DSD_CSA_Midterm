@@ -40,6 +40,10 @@ Spot VMs
   Resume on a new VM:     copy this script, gen_mc.py and ../cell_lib.sp over, then
                           ./launch_parallel_carry_select.py resume <run_id> -w 384 --sync gs://my-bucket/mc
                           (finished chunks are downloaded first; the run's own netlist.sp snapshot is used)
+  On GCP, once every chunk has been run (and the final sync is done) the VM stops itself after a 60 s
+  countdown (Ctrl-C cancels; --stop-vm-delay S changes it, --no-stop-vm turns it off). It uses
+  `gcloud compute instances stop`, falling back to `sudo shutdown -h now`. It does not stop after
+  q / k / Ctrl-C or a preemption.
 
 Layout of runs/<run_id>/
   params                       TOTAL, CHUNK, BASE_SEED
@@ -463,6 +467,34 @@ def install_signal_handlers():
     signal.signal(signal.SIGHUP, on_hup)
 
 
+def stop_this_vm(watcher, log, delay):
+    """Stop the GCP VM this script runs on, after a `delay` s countdown that Ctrl-C cancels.
+    Tries the Compute API first (needs the VM's service account to have compute write access), then
+    falls back to an OS shutdown, which GCE also turns into a stopped (TERMINATED) instance."""
+    name, zone = watcher.gcp_meta("name"), watcher.gcp_meta("zone")
+    log(f"Stopping this VM ({name or HOST}) in {delay:.0f} s - press Ctrl-C to cancel")
+    ints, deadline = SIGNALS["int"], time.monotonic() + delay
+    while time.monotonic() < deadline:
+        if SIGNALS["int"] != ints or SIGNALS["term"]:
+            log("VM stop cancelled")
+            return
+        time.sleep(0.25)
+    if name and zone and shutil.which("gcloud"):
+        try:
+            r = subprocess.run(["gcloud", "compute", "instances", "stop", name, f"--zone={zone.rsplit('/', 1)[-1]}",
+                                "--async", "--quiet"], capture_output=True, text=True, timeout=60)
+            if r.returncode == 0:
+                log(f"Stop requested for {name} at {now_human()}")
+                return
+            err = (r.stderr.strip().splitlines() or ["no output"])[-1]
+            log(f"gcloud stop failed ({err}) - shutting down the OS instead")
+        except (OSError, subprocess.TimeoutExpired) as e:
+            log(f"gcloud stop failed ({e}) - shutting down the OS instead")
+    cmd = ["shutdown", "-h", "now"] if os.geteuid() == 0 else ["sudo", "-n", "shutdown", "-h", "now"]
+    if subprocess.run(cmd).returncode != 0:
+        log("Couldn't stop the VM - stop it by hand")
+
+
 def ensure_single_threaded_ngspice():
     init = Path(".spiceinit")
     lines = init.read_text().splitlines() if init.exists() else []
@@ -760,6 +792,11 @@ def run_session(run_id, workers, sync, mode, args):
     if not complete:
         term.log(f"Resume with:  ./{Path(__file__).name} resume {run_id} -w {workers}"
                  + (f" --sync {sync.dest}" if sync.dest else ""))
+
+    # Every chunk has been attempted (status ok, or failed after retries): nothing left to do, so stop
+    # the VM instead of paying for it idle. Not after q / k / Ctrl-C / preemption.
+    if args.stop_vm and status in ("ok", "failed") and watcher.cloud == "GCP":
+        stop_this_vm(watcher, term.log, args.stop_vm_delay)
     return 0 if status == "ok" else 1
 
 
@@ -854,6 +891,10 @@ def main():
                         help="seconds between progress.txt updates / plain progress lines (default 60)")
     common.add_argument("--retries", type=int, default=1, help="retries for a failed chunk (default 1)")
     common.add_argument("--plain", action="store_true", help="plain line output instead of the dashboard")
+    common.add_argument("--no-stop-vm", dest="stop_vm", action="store_false",
+                        help="don't stop the GCP VM when the run finishes")
+    common.add_argument("--stop-vm-delay", type=float, default=60, metavar="S",
+                        help="countdown before stopping the VM, Ctrl-C cancels (default 60)")
 
     ap = argparse.ArgumentParser(description="Parallel carry_select_16 Monte Carlo launcher.",
                                  epilog="See the top of this file for keys, Spot VM notes and the output layout.")

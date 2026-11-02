@@ -1,5 +1,5 @@
 #!/bin/bash
-# deploy.sh - clone the repo on every RUNNING VM and start the mux Monte Carlo
+# deploy.sh - clone the repo on every RUNNING VM and start the carry-select adder (CSA) Monte Carlo
 #
 # Trials (pick one):
 #   (none)              per-VM trials from the TRIALS_BY_CORES table in this file
@@ -14,10 +14,11 @@
 set -euo pipefail
 
 # ---- trials per VM, by core count (edit these) ----------------------------------
+# A CSA trial takes ~40-55 s on one core, so 125 trials per core is roughly 1.5-2 hours
 declare -A TRIALS_BY_CORES=(
-  [8]=10000
-  [16]=20000
-  [48]=60000
+  [8]=1000
+  [16]=2000
+  [48]=6000
 )
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -59,7 +60,8 @@ SEED=$3
 KEEP=$4
 WORKERS=$(nproc)
 DIR="$HOME/F26_DSD_CSA_Midterm"
-RUNS="$DIR/mux_mc/runs"
+SIM="$DIR/CSA_testing"
+RUNS="$SIM/runs"
 
 if systemctl is-active --quiet mc-sim; then
   echo "mc-sim is already running here, skipping"
@@ -76,13 +78,13 @@ else
   git clone -q "$REPO" "$DIR"
 fi
 
-[[ -f $DIR/mux_mc/mux_mc.sp ]] || { echo "No mux_mc/mux_mc.sp in the repo"; exit 1; }
+[[ -f $SIM/carry_select_mc.sp ]] || { echo "No CSA_testing/carry_select_mc.sp in the repo"; exit 1; }
 
 # Move any earlier runs aside so collect.sh only picks up this deploy's results
 if [[ -d $RUNS && -n $(ls -A "$RUNS") ]]; then
-  mkdir -p "$DIR/mux_mc/runs_archive"
-  mv "$RUNS" "$DIR/mux_mc/runs_archive/$(date +%Y%m%d_%H%M%S)"
-  echo "Moved previous runs to mux_mc/runs_archive/"
+  mkdir -p "$SIM/runs_archive"
+  mv "$RUNS" "$SIM/runs_archive/$(date +%Y%m%d_%H%M%S)"
+  echo "Moved previous runs to CSA_testing/runs_archive/"
 fi
 
 EXTRA=()
@@ -90,8 +92,8 @@ EXTRA=()
 
 sudo systemctl reset-failed mc-sim 2>/dev/null || true
 sudo systemd-run --unit=mc-sim --uid="$USER" \
-  --working-directory="$DIR/mux_mc" --setenv=PYTHONUNBUFFERED=1 \
-  python3 "$DIR/mux_mc/launch_parallel.py" run "$TRIALS" -w "$WORKERS" --seed "$SEED" --plain "${EXTRA[@]}"
+  --working-directory="$SIM" --setenv=PYTHONUNBUFFERED=1 \
+  python3 "$SIM/launch_parallel.py" run "$TRIALS" -w "$WORKERS" --seed "$SEED" --plain "${EXTRA[@]}"
 
 echo "Started: $TRIALS trials, $WORKERS workers (nproc), seed $SEED," \
      "$([[ $KEEP == keep ]] && echo "VM stays on when done" || echo "VM stops when done")"
